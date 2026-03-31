@@ -280,20 +280,7 @@ services:
     restart: "no"
     profiles: ["containers", "worker", "beat", "imap"]
 
-  otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.128.0
-    command: [ "--config=/etc/otel/config.yaml" ]
-    volumes:
-      - ./docker/otel-collector-config.yaml:/etc/otel/config.yaml
-    ports:
-      - "4317:4317"    # gRPC OTLP
-      - "4318:4318"    # HTTP OTLP
-      - "55679:55679"  # tracer
-    environment:
-      GRAFANA_CLOUD_OTLP_ENDPOINT: ${GRAFANA_CLOUD_OTLP_ENDPOINT:-}
-      GRAFANA_CLOUD_INSTANCE_ID: ${GRAFANA_CLOUD_INSTANCE_ID:-}
-      GRAFANA_CLOUD_API_KEY: ${GRAFANA_CLOUD_API_KEY:-}
-    profiles: ["obs"]
+  
 
 volumes:
   db-data:
