@@ -42,8 +42,7 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
       - runtime-config:/run/secrets:ro
-    ports:
-      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gobii}"]
       interval: 5s
@@ -54,8 +53,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    ports:
-      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -76,8 +74,7 @@ services:
     volumes:
       - sandbox-workspace-data:/workspace
       - sandbox-runtime-cache:/runtime-cache
-    ports:
-      - "127.0.0.1:${SANDBOX_COMPUTE_PORT:-8080}:8080"
+    
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8080/healthz || exit 1"]
       interval: 30s
@@ -110,8 +107,7 @@ services:
       - media-data:/app/mediafiles
       - static-data:/app/staticfiles
       - runtime-config:/config:ro
-    ports:
-      - "8000:8000"
+    
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8000/healthz/ || exit 1"]
       interval: 30s
@@ -206,8 +202,7 @@ services:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - FLOWER_BASIC_AUTH=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-admin}
-    ports:
-      - "127.0.0.1:${FLOWER_PORT:-5555}:5555"
+    
     restart: unless-stopped
     profiles: ["obs"]
 
@@ -260,34 +255,13 @@ services:
     environment:
       MINIO_ROOT_USER_FILE: /run/secrets/minio-root-user
       MINIO_ROOT_PASSWORD_FILE: /run/secrets/minio-root-password
-    ports:
-      - "127.0.0.1:9000:9000"
-      - "127.0.0.1:9090:9090"
+   
     volumes:
       - minio-data:/data
       - runtime-config:/run/secrets:ro
     restart: unless-stopped
     profiles: ["object-storage"]
 
-  otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.128.0
-    depends_on:
-      bootstrap-env:
-        condition: service_completed_successfully
-    command: [ "--config=/etc/otel/config.yaml" ]
-    volumes:
-      - ./docker/otel-collector-config.yaml:/etc/otel/config.yaml
-      - runtime-config:/run/secrets:ro
-    ports:
-      - "127.0.0.1:4317:4317"
-      - "127.0.0.1:4318:4318"
-      - "127.0.0.1:55679:55679"
-    environment:
-      GRAFANA_CLOUD_OTLP_ENDPOINT: ${GRAFANA_CLOUD_OTLP_ENDPOINT:-}
-      GRAFANA_CLOUD_INSTANCE_ID: ${GRAFANA_CLOUD_INSTANCE_ID:-}
-      GRAFANA_CLOUD_API_KEY: ${GRAFANA_CLOUD_API_KEY:-}
-    restart: unless-stopped
-    profiles: ["obs"]
 
 volumes:
   db-data:
