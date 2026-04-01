@@ -49,6 +49,19 @@ services:
     volumes:
       - minio-data:/data
 
+  minio-init:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      mc alias set local http://minio:9000 $${MINIO_ROOT_USER:-minioadmin} $${MINIO_ROOT_PASSWORD:-minioadmin};
+      mc mb --ignore-existing local/gobii;
+      exit 0;
+      "
+    profiles: ["web", "worker", "beat", "imap"]
+
   sandbox-compute:
     platform: linux/amd64
     build:
@@ -107,7 +120,7 @@ services:
     restart: unless-stopped
     command: >-
       bash -lc "gunicorn config.asgi:application -k uvicorn.workers.UvicornWorker --workers ${GUNICORN_WORKERS:-4} --bind 0.0.0.0:8000 --graceful-timeout 30 --timeout 0"
-    profiles: ["containers"]
+    profiles: ["web"]
 
   flower:
     image: mher/flower:2.0
@@ -130,7 +143,7 @@ services:
     platform: linux/amd64
     build:
       context: .
-      dockerfile: ./docker/Dockerfile  # relative to platform directory
+      dockerfile: ./docker/Dockerfile
     command: celery -A config worker -l info
     environment:
       <<: *app-sandbox-env
@@ -279,7 +292,7 @@ services:
       db:
         condition: service_healthy
     restart: "no"
-    profiles: ["containers", "worker", "beat", "imap"]
+    profiles: ["web", "worker", "beat", "imap"]
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.128.0
@@ -287,9 +300,9 @@ services:
     volumes:
       - ./docker/otel-collector-config.yaml:/etc/otel/config.yaml
     ports:
-      - "4317:4317"    # gRPC OTLP
-      - "4318:4318"    # HTTP OTLP
-      - "55679:55679"  # tracer
+      - "4317:4317"
+      - "4318:4318"
+      - "55679:55679"
     environment:
       GRAFANA_CLOUD_OTLP_ENDPOINT: ${GRAFANA_CLOUD_OTLP_ENDPOINT:-}
       GRAFANA_CLOUD_INSTANCE_ID: ${GRAFANA_CLOUD_INSTANCE_ID:-}
