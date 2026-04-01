@@ -106,7 +106,7 @@ services:
     restart: unless-stopped
     command: >-
       bash -lc "gunicorn config.asgi:application -k uvicorn.workers.UvicornWorker --workers ${GUNICORN_WORKERS:-4} --bind 0.0.0.0:8000 --graceful-timeout 30 --timeout 0"
-    profiles: ["containers"]
+    profiles: ["web"]
 
   flower:
     image: mher/flower:2.0
